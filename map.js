@@ -1,49 +1,69 @@
-// var map;
+var map;
+// var infowindow;
 function initMap() {
   console.log('init');
   var originalMapCenter = new google.maps.LatLng(-25.363882, 131.044922);
-  var map = new google.maps.Map(document.getElementById('map'), {
+  map = new google.maps.Map(document.getElementById('map'), {
     zoom: 4,
     center: originalMapCenter
   });
 
-  var marker = new google.maps.Marker({
-    position: originalMapCenter,
-    map: map
+  var openedMarked = null;
+  var areaHeightTop = 100, areaHeightBottom = 12, areaWidth = 100;
+
+  map.addListener('mousemove', function(event) {
+    if (openedMarked == null) return;
+    if (event.pixel.x < openedMarked.px.x - areaWidth ||
+        event.pixel.x > openedMarked.px.x + areaWidth ||
+        event.pixel.y < openedMarked.px.y - areaHeightTop ||
+        event.pixel.y > openedMarked.px.y + areaHeightBottom) {
+      console.log('out of bound');
+      // console.log(event.pixel.x);
+      // console.log(event.pixel.y);
+      console.log(openedMarked.infowindow);
+      openedMarked.infowindow.close();
+      openedMarked = null;
+    }
   });
 
-  var infowindow = new google.maps.InfoWindow({
-    content: 'Change the zoom level'
+  map.addListener('click', function(event) {
+    console.log(event.pixel);
   });
-  // marker.infowindow = infowindow;
-  //infowindow.open(map, marker);
 
-  marker.addListener('mouseover', function() {
-    console.log('marker mouse over');
-    var div = document.createElement('div');
-    div.innerHTML = 'hello';
-    div.id = 'test';
-    div.style = "backgroundcolor: red; border: 1px solid red; height:100%; width:100%"
-    google.maps.event.addDomListener(div, 'mouseover', function() {
-      console.log('success open');
+  function addMarker(position) {
+    var marker = new google.maps.Marker({
+      position: position,
+      map: map
+    });
+
+    console.log(marker);
+    //infowindow.open(map, marker);
+    var infowindow = new google.maps.InfoWindow({
+      content: 'Change the zoom levelChange the zoom levelChange the zoom levelChange the zoom levelChange the zoom levelChange the zoom levelChange the zoom levelChange the zoom levelChange the zoom level'
+    });
+
+    marker.addListener('mouseover', function() {
+      console.log('marker mouse over');
+      marker.infowindow = infowindow;
+      if (openedMarked != null) {
+        return;
+      }
       infowindow.open(marker.get('map'), marker);
+      var scale = Math.pow(2, map.getZoom());
+      var nw = new google.maps.LatLng(
+          map.getBounds().getNorthEast().lat(),
+          map.getBounds().getSouthWest().lng()
+      );
+      var worldCoordinateNW = map.getProjection().fromLatLngToPoint(nw);
+      var worldCoordinate = map.getProjection().fromLatLngToPoint(marker.getPosition());
+      var pixelOffset = new google.maps.Point(
+          Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
+          Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
+      );
+      marker.px = pixelOffset;
+      openedMarked = marker;
     });
-    google.maps.event.addDomListener(div, 'mouseout', function() {
-      console.log('success close');
-      infowindow.close();
-    });
-    infowindow.setContent(div);
-    infowindow.open(marker.get('map'), marker);
-  });
-
-  marker.addListener('mouseout', function() {
-    console.log('marker mouse out');
-    infowindow.close();
-  });
-
+  }
+  addMarker(new google.maps.LatLng(-30, 150));
+  addMarker(new google.maps.LatLng(-32, 150));
 }
-
-
-$(document).ready(function(){
-  console.log('start');
-});
